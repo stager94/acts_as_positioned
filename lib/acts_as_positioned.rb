@@ -7,13 +7,18 @@ module ActsAsPositioned
   module ClassMethods
 
     def acts_as_positioned(opts={})
-      
-      positioned_under = opts[:under].nil? ? self.name : "self.#{opts[:under].to_s}.#{self.name.tableize}" rescue "[]"
+      if opts[:through].present?
+        positioned_under = "self.#{opts[:through].to_s}"
+      elsif opts[:under].present?
+        positioned_under = "self.#{opts[:under].to_s}.#{self.name.tableize}"
+      else
+        positioned_under = self.name
+      end
       
       class_eval <<-CGF
         include ActsAsPositioned::InstanceMethods
         def siblings_in_position
-          #{positioned_under}
+          #{positioned_under || []}
         end
 
         attr_accessor :old_position
@@ -29,12 +34,12 @@ module ActsAsPositioned
   module InstanceMethods
     
     def set_old_position
-      if self.position_changed? || self.position.blank?
+      if self.position_changed? || self.position.blank? || self.position == 0
         self.should_fix_positions = true
         begin
           count = siblings_in_position.count + 1
           self.old_position = self.new_record? ? count : self.class.find(self.id).position
-          self.position = count if self.position.blank?
+          self.position = count if self.position.blank? || self.position == 0
         rescue
           #fail gracefully
         end
