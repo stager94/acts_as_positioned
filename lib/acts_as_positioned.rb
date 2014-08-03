@@ -5,15 +5,31 @@ module ActsAsPositioned
   end
 
   module ClassMethods
+    attr_accessor :params
+
+    def by_scope
+      params[:by_scope].present? && "#{self.name}.#{params[:by_scope].to_s}" || nil
+    end
+
+    def by_method
+      params[:by_method].present? && "self.#{params[:by_method].to_s}" || nil
+    end
+
+    def by_field
+      params[:by_field].present? && "#{self.name}.where(#{params[:by_field]}: self.#{params[:by_field]})" || nil
+    end
+
+    def under
+      params[:under].present? && "self.#{params[:under].to_s}.#{self.name.tableize}" || nil
+    end
+
+    def default
+      self.name
+    end
 
     def acts_as_positioned(opts={})
-      if opts[:through].present?
-        positioned_under = "self.#{opts[:through].to_s}"
-      elsif opts[:under].present?
-        positioned_under = "self.#{opts[:under].to_s}.#{self.name.tableize}"
-      else
-        positioned_under = self.name
-      end
+      self.params = opts
+      positioned_under = by_field || by_method || by_scope || under || default
       
       class_eval <<-CGF
         include ActsAsPositioned::InstanceMethods
@@ -53,9 +69,9 @@ module ActsAsPositioned
       begin
         return true unless self.should_fix_positions
         if !self.old_position.nil? && self.old_position >= self.position 
-          broken_records = siblings_in_position.order("position ASC, updated_at DESC")
+          broken_records = siblings_in_position.reorder("position ASC, updated_at DESC")
         else
-          broken_records = siblings_in_position.order("position ASC, updated_at ASC")
+          broken_records = siblings_in_position.reorder("position ASC, updated_at ASC")
         end
 
         broken_records.each_with_index do |s,i|
