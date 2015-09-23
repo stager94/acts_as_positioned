@@ -19,6 +19,10 @@ module ActsAsPositioned
       params[:by_field].present? && "#{self.name}.where(#{params[:by_field]}: self.#{params[:by_field]})" || nil
     end
 
+    def by_fields
+      params[:by_fields].present? && "#{self.name}.where( #{params[:by_fields].map {|field| "#{field}: self.#{field}" }.join ', ' } )" || nil
+    end
+
     def under
       params[:under].present? && "self.#{params[:under].to_s}.#{self.name.tableize}" || nil
     end
@@ -29,7 +33,7 @@ module ActsAsPositioned
 
     def acts_as_positioned(opts={})
       self.params = opts
-      positioned_under = by_field || by_method || by_scope || under || default
+      positioned_under = by_field || by_fields || by_method || by_scope || under || default
       
       class_eval <<-CGF
         include ActsAsPositioned::InstanceMethods
