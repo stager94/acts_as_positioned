@@ -17,7 +17,7 @@ Installation
 
 Add this to your gemfile:
 
-    gem 'acts_as_positioned', :git => 'git://github.com/ALLDAYEVERYDAY/acts_as_positioned.git'
+    gem 'acts_as_positioned', :git => 'git://github.com/stager94/acts_as_positioned.git'
 
 Run <code>bundle install</code>.
 
